@@ -564,7 +564,7 @@ class Net_Geo
                 $urlinfo["port"] = 80;
             }
         
-            $sp = @fsockopen($urlinfo["host"], $urlinfo["port"], &$errno, &$errstr, $this->default_timeout);
+            $sp = @fsockopen($urlinfo["host"], $urlinfo["port"], $errno, $errstr, $this->default_timeout);
             if (!$sp) {
                 return false;
             }
