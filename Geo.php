@@ -20,6 +20,7 @@
 // $Id$
 
 require_once 'PEAR.php';
+require_once 'Cache/Function.php';
 
 /**
  * NetGeo - determine geographic information on an internet address
@@ -34,7 +35,10 @@ require_once 'PEAR.php';
  * Results returned are a single array of results if a string is passed in
  * or in the case of an array, a multi-dim array with the as the key
  *
- * @version 0.9
+ * Query service type (CAIDA or localizer) is not available as a constructer
+ * to retain compatibility with existing CAIDA NetGeo classes (perl + java)
+ *
+ * @version 1.0
  * @package NetGeo
  * @author Graeme Merrall <graeme@inetix.com.au>
  */
@@ -49,6 +53,26 @@ class Net_Geo
 {
 
     /**
+     * Path to local cache file. 
+     * Caching is compulsory to reduce load on CAIDA server
+     *
+     * @var string
+     * @access public
+     */
+    var $cache_path = "/tmp/";
+
+    /**
+     * How long to wait befire rechecking cached entries in *days*
+     * This should be comething nice and high
+     *
+     * @var in
+     * @access public
+     */
+    var $cache_ttl = 30;
+
+     /**
+     * CAIDA only
+     * 
      * Maximum length of time, in seconds, which will be allowed during a whois
      * lookup by the NetGeo server.
      * The actual default value is maintained by the server.
@@ -59,6 +83,8 @@ class Net_Geo
     var $default_timeout = 60;
     
     /**
+     * CAIDA only
+     * 
      * Location of the default netgeo server
      * If port not speicifed, defaults to 80
      *
@@ -68,24 +94,35 @@ class Net_Geo
     var $default_server = "http://netgeo.caida.org/perl/netgeo.cgi";
 
     /**
-     * Path to local cache file.  If not empty then not used.
-     * It is strongly recommended you use a cache file
+     * localizer only
+     * 
+     * Location of the localizer data file
      *
      * @var string
      * @access public
      */
-    var $cache_path = "/tmp/";
+    var $localizer_data = "./demo.csv";
 
     /**
-     * How long to wait befire rechecking cached entries in days
-     * This should be comething nice and high
-     * NOT USED YET
-     * @var in
-     * @access public
+     * Type of service to use. May be either 'caida' or 'localizer'
+     * Default is 'caida'
+     *
+     * @var string
+     @ @access private
      */
-    var $cache_ttl = 30;
+    var $service;
+    
+    /**
+     * Cache filename prefix
+     *
+     * @var string
+     * @access private
+     */
+     var $cache_prefix = "netgeo";
 
     /**
+     * CAIDA only
+     * 
      * User Agent string.
      *
      * @var string
@@ -94,14 +131,18 @@ class Net_Geo
     var $useragent = "PHP/NetGeo";
 
     /**
+     * CAIDA only
+     * 
      * Class version
      *
      * @var string
      * @access private
      */
-    var $useragent_version = "0.9";
+    var $useragent_version = "1.0";
 
     /**
+     * CAIDA only
+     * 
      * How many targets can be read in at once
      * Should be enough for most everyone
      *
@@ -111,20 +152,22 @@ class Net_Geo
     var $array_limit = 100;
 
     /**
-     * Name of the cache file
+     * Function cache object
+     *
+     * @var object
+     * @access private
+     */
+     var $cache;
+
+    /**
+     * Name of global var for copying $this when calling function cache
+     * This is needed for the cache function to operate correctly
      *
      * @var string
      * @access private
      */
-    var $cache_file = "Net_Geo.cache";
+     var $netgeo_global = "netgeo_global";
 
-    /**
-     * Container for cache file
-     *
-     * @var array
-     * @access private
-     */
-     var $cache_list = array();
 
     /**
      * Constructor
@@ -139,28 +182,64 @@ class Net_Geo
      */
     function Net_Geo($applicationName="", $alternateServerUrl="")
     {
-        // check to see if an alternate server URL is used
-        if (!empty($alternateServerUrl)) {
-            $this->default_server = $alternateServerUrl;
-        }
-
-        $this->useragent = sprintf("%s %s", $this->useragent, $this->useragent_version);
-
-        // set the custom user agent
-        if (!empty($applicationName)) {
-            // trim whitespace
-            $applicationName = trim($applicationName);
-
-            // also set the agent name
-            $this->useragent = sprintf("%s/%s", $applicationName, $this->useragent);
-        }
-        
-        // load in the cache
-        $this->cache_list = $this->_readCache();
+        $this->applicationName = $applicationName;
+        $this->alternateServerUrl = $alternateServerUrl;
+      
+        // init cache object
+        $this->cache = new Cache_Function('file', 
+                                          array('cache_dir' => $this->cache_path, 
+                                                'filename_prefix' => $this->cache_prefix
+                                               ),
+                                          $this->cache_ttl * 86400
+                                         );
 
         return true;
     }
 
+    
+    function setService($service = "caida") {
+        
+        if ($service == "localizer") {
+            
+            if (@localizer_read($this->localizer_data, FALSE) == FALSE) {
+                PEAR::raiseError("Can't read localizer data file ".$this->localizer_data);
+                return false;
+            }
+
+        } elseif ($service == "caida") {
+            
+            // check to see if an alternate server URL is used
+            if (!empty($alternateServerUrl)) {
+                $this->default_server = $this->alternateServerUrl;
+            }
+    
+            $this->useragent = sprintf("%s %s", $this->useragent, 
+                                                $this->useragent_version
+                                      );
+    
+            // set the custom user agent
+            if (!empty($applicationName)) {
+                // trim whitespace
+                $applicationName = trim($applicationName);
+    
+                // also set the agent name
+                $this->useragent = sprintf("%s/%s", $this->applicationName, 
+                                                    $this->useragent
+                                          );
+            }
+        
+        } else {
+            // return error
+            return new PEAR_Error("No service specified");
+
+        }
+
+
+        $this->service = $service;
+        return true;
+            
+    }
+        
     /**
      * Gets a complete record for an address
      * Returns either a single or multidimentional arrray
@@ -179,11 +258,11 @@ class Net_Geo
      * Returns the 2-letter ISO 3166 country code
      * Returns NO_MATCH if the AS number has been looked up
      * but nothing was found in the whois lookups.
-     * Returns NO_COUNTRY if the lookup returned a record
+     * Returns NO_COUNTRY if the lookup returned a record 
      * but no country could be found.
      * Returns an empty string if nothing was found in the database
      *
-     * @param mixed $target Single or list of addresses
+     * @param string $target single address
      * @return array
      * @access public
      */
@@ -202,9 +281,9 @@ class Net_Geo
      * Lat/Long will be (0,0) if the target has been looked up but there was no
      * match in the whois lookups, or if no address could be parsed from the
      * whois record, or if the lat/long for the address is unknown.
-     * Returns undef if nothing was found in the database
+     * Returns an empty string if nothing was found in the database
      *
-     * @param mixed $target Single or list of addresses
+     * @param string $target single address
      * @return array
      * @access public
      */
@@ -219,7 +298,7 @@ class Net_Geo
      * It's probably just as easy for the user to extract lat and long directly
      * from the array. 
      *
-     * @param array $latLongRef Latitude/Longtitude array
+     * @param string $target single address
      * @return double
      * @access public
      */
@@ -240,7 +319,7 @@ class Net_Geo
      * It's probably just as easy for the user to extract lat and long directly
      * from the array
      *
-     * @param array $latLongRef Latitude/Longtitude array
+     * @param string $target single address
      * @return double
      * @access public
      */
@@ -265,6 +344,12 @@ class Net_Geo
      */
     function _execute($methodName, $input)
     {
+
+        // if we haven't got a service set, then do it now
+        if (empty($this->service)) {
+            $this->setService();
+        }
+
         // Test the target strings in the input array.  Any targets not in
         // an acceptable format will have their STATUS field set to INPUT_ERROR.
         // This method will also store the standardized target into the array
@@ -274,19 +359,11 @@ class Net_Geo
             return $inputArray;
         }
 
-        
-
         $resultArray = $this->_processArray($methodName, $inputArray);
         
         // if there is only one array, move the whole thing up one
         if (count($resultArray) == 1) {
             $resultArray = $resultArray[0];
-        }
-
-        // die if we can't write the cache file
-        $error = $this->_writeCache();
-        if (PEAR::isError($error)) {
-            return $error;
         }
 
         return $resultArray;        
@@ -343,7 +420,9 @@ class Net_Geo
 
 
     /** 
-     * Main function that processes adresses
+     * Main function that processes addresses
+     *
+     * It might be a good idea to move the caching up one level?
      * 
      * @param string $methodName Lookup method
      * @param array  $inputArray Formatted address array
@@ -357,24 +436,32 @@ class Net_Geo
             $entry = $this->_verifyInputFormat($entry);
         
             if (isset($entry["TARGET"]) && !isset($entry["INPUT_ERROR"])) {
-                // check the cache
-                if (!$dataArray[$i] = $this->_checkCache($entry)) {
+
+                // set up the cache work around
+                $GLOBALS[$this->netgeo_global] =& $this;
+                
+                if ($this->service == "localizer") {
+
+                    $response = $this->cache->call('localizer_search', $entry["TARGET"]);
+
+                } else {
 
                     // else do the HTTP request
-                    $url = sprintf("%s?method=%s&target=%s", $this->default_server, $methodName, $entry["TARGET"]);
-                    $response = $this->_executeHttpRequest($url);
-                        
-                    if (!isset($response)) {
-                        $entry["STATUS"] = NETGEO_HTTP_ERROR;
-                    }
+                    $url = sprintf("%s?method=%s&target=%s", $this->default_server,
+                                                             $methodName, $entry["TARGET"]
+                                  );
+
+                    $response =& $this->cache->call($this->netgeo_global.'->_executeHttpRequest', $url);
     
-                    // parse it all into something useful
-                    // at this point we should look for NETGEO_LIMIT_EXCEEDED as well
-                    $dataArray[$i] = $this->_processResult($response);
-                    
-                    // pop it into the cache
-                    $this->cache_list[] = $dataArray[$i];
                 }
+
+                if (!isset($response)) {
+                    $entry["STATUS"] = NETGEO_HTTP_ERROR;
+                }
+
+                // parse it all into something useful
+                // at this point we should look for NETGEO_LIMIT_EXCEEDED as well
+                $dataArray[$i] = $this->_processResult($response);
                 
             } else {
                 $dataArray[$i] = $entry;
@@ -445,8 +532,8 @@ class Net_Geo
             }
         } else {
             $inputArray["INPUT_ERROR"] = NETGEO_INPUT_ERROR;
-            // raise some error tex
-            // unrecognized format for inpu
+            // raise some error text
+            // unrecognized format for input
             return $inputArray;
         }
         
@@ -470,8 +557,7 @@ class Net_Geo
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
             $response = curl_exec($ch);
             curl_close($ch);
-        }
-        else {
+        } else {
             // split the server url
             $urlinfo = parse_url($url);
             if (!isset($urlinfo["port"])) {
@@ -503,115 +589,56 @@ class Net_Geo
      */
     function _processResult($response)
     {
-        
-        $lineArray = preg_split("/\n/", $response);
-        $line = array_shift($lineArray);
+        // process the localizer result differently
+        // since we already have an array
+        if ($this->service == "localizer") {
 
-        // first check for anything icky from the server
-        if (preg_match("/".NETGEO_HTTP_ERROR."/", $line) || preg_match('/^\s*$/', $response)) {
+            foreach ($response as $key=>$val) {
 
-            // empty empty empty
-            if (preg_match('/^\s*$/', $text)) {
-                $text = "Empty content string";
+                $retarray[strtoupper($key)] = $val;
+            }
+
+        } elseif ($this->service == "caida") {
+       
+            $lineArray = preg_split("/\n/", $response);
+            $line = array_shift($lineArray);
+
+            // first check for anything icky from the server
+            if (preg_match("/".NETGEO_HTTP_ERROR."/", $line) || preg_match('/^\s*$/', $response)) {
+
+                // empty empty empty
+                if (preg_match('/^\s*$/', $text)) {
+                    $text = "Empty content string";
+                    return array("STATUS"=>$text);
+                }
+
+            } elseif (preg_match("/".NETGEO_LIMIT_EXCEEDED."/", $line)) {
                 return array("STATUS"=>$text);
             }
 
-        } elseif (preg_match("/".NETGEO_LIMIT_EXCEEDED."/", $line)) {
-            return array("STATUS"=>$text);
-        }
-
-        // now loop through. This should being us out at TARGET
-        while (isset($line) && !preg_match("/^TARGET:/", $line)) {
-            $line = array_shift($lineArray);
-        }
-
-        // keep going
-        while (isset($line)) {
-            if (preg_match("/^TARGET:\s+(.*\S)\s*<br>/", $line, $matches)) {
-                $retarray["TARGET"] = $matches[1];
-            } elseif (preg_match("/^STATUS:\s+([\w\s]+\S)\s*<br>/", $line, $matches)) {
-                $retarray["STATUS"] = $matches[1];
-            } elseif (preg_match("/^(\w+):\s+(.*\S)\s*<br>/", $line, $matches)) {
-                $retarray[$matches[1]] = $matches[2];
+            // now loop through. This should being us out at TARGET
+            while (isset($line) && !preg_match("/^TARGET:/", $line)) {
+                $line = array_shift($lineArray);
             }
-            $line = array_shift($lineArray);
+
+            // keep going
+            while (isset($line)) {
+                if (preg_match("/^TARGET:\s+(.*\S)\s*<br>/", $line, $matches)) {
+                    $retarray["TARGET"] = $matches[1];
+                } elseif (preg_match("/^STATUS:\s+([\w\s]+\S)\s*<br>/", $line, $matches)) {
+                    $retarray["STATUS"] = $matches[1];
+                } elseif (preg_match("/^(\w+):\s+(.*\S)\s*<br>/", $line, $matches)) {
+                    $retarray[$matches[1]] = $matches[2];
+                }
+                $line = array_shift($lineArray);
+            }
+
         }
 
         return $retarray;   
 
     }
 
-    /**
-     * Writes the cache to disk
-     * This is a bot of a cop-out as it just serialises an array
-     * It'll be nice to make this more intelligent (like ttl)
-     * 
-     * @return bool or pear error 
-     * @access private
-     */
-    function _writeCache()
-    {
-        
-        if (!is_dir($this->cache_path)) {
-            return new PEAR_Error("No such cache directory ".$this->cache_path);
-        }
-
-        $output = serialize($this->cache_list);
-        $fp = @fopen($this->cache_path."/".$this->cache_file, "w");
-        if (!$fp) {
-            return new PEAR_Error("Unable to write to cache");
-        }
-
-        fwrite($fp, $output);
-
-        fclose($fp);
-        return true;
-    }
-
-    /**
-     * Loads the cache from disk
-     *
-     * @return array 
-     * @access private
-     */
-    function _readCache()
-    {
-
-        if (!is_dir($this->cache_path)) {
-            return new PEAR_Error("No such cache directory ".$this->cache_path);
-        }
-
-        // cache might not exist yet so don't error out. 
-        // can we raise a warning but not return it?
-        if (!is_readable($this->cache_path."/".$this->cache_file)) {
-            return array();
-        }
-
-        $input = join('', file($this->cache_path."/".$this->cache_file));
-        $data = unserialize($input);
-
-        return $data;
-    }
-
-    /**
-     * Checks the cache for an entry
-     * Returns entry if present
-     *
-     * @param array $entry Entry to check caching for
-     * @return array or false if no entry
-     * @access private
-     */
-    function _checkCache($entry)
-    {
-        foreach ($this->cache_list as $cache_entry) {
-            //echo $entry["TARGET"], "\n";
-            
-            if (@in_array($entry["TARGET"], $cache_entry)) {
-                return $cache_entry;
-            }
-        }
-        return false;
-    }
 }
 
 

@@ -11,21 +11,32 @@
       <name>Graeme Merrall</name>
       <email>graeme@inetix.com.au</email>
     </maintainer>
-  </maintainers>
-  <release>
-    <version>0.9</version>
-    <date>2002-01-30</date>
-    <state>beta</state>
-    <notes>
-      Very simplistic caching used which could do with a tidy up.
-      Although the NetGeo server will accept domain names, the quality is very
-      sporadic. Use IP or AS numbers for a better result.
-    </notes>
+	</maintainers>
+	<release>
+		<version>1.0</version>
+		<date>2002/04/26</date>
+		<state>stable</stable>
+		<notes>
+				* Added use of pear Cache::Function
+				* Added additional use of localizer API (see READ me for URL)
+		</notes>
     <filelist>
       <dir name="/" baseinstalldir="Net">
-	<file role="php">Geo.php</file>
-	<file role="doc">README</file>
+				<file role="php">Geo.php</file>
+				<file role="doc">README</file>
       </dir>
     </filelist>
-  </release>
+	</release>
+	<changelog>
+	  <release>
+	    <version>0.9</version>
+	    <date>2002-01-30</date>
+	    <state>beta</state>
+	    <notes>
+	      Very simplistic caching used which could do with a tidy up.
+	      Although the NetGeo server will accept domain names, the quality is very
+	      sporadic. Use IP or AS numbers for a better result.
+	    </notes>
+	</release>
+	</changelog>
 </package>
