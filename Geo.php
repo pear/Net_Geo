@@ -28,7 +28,7 @@ require_once 'Cache/Function.php';
  * Can accept input of an AS number, an IP address or a host name
  * Input can be individual or an array of addresses
  *
- * $geo = new NetGeo();
+ * $geo = new Net_Geo();
  * $geo->getRecord("php.net");
  * $geo->getRecord(array("php.net", "google.com"));
  *
