@@ -124,7 +124,7 @@ class Net_Geo
      * @var array
      * @access private
      */
-    var $cache_list = array();
+     var $cache_list = array();
 
     /**
      * Constructor
@@ -138,29 +138,28 @@ class Net_Geo
      * @access public
      */
     function Net_Geo($applicationName="", $alternateServerUrl="")
-        {
-        
-            // check to see if an alternate server URL is used
-            if (!empty($alternateServerUrl)) {
-                $this->default_server = $alternateServerUrl;
-            }
-
-            $this->useragent = sprintf("%s %s", $this->useragent, $this->useragent_version);
-
-            // set the custom user agent
-            if (!empty($applicationName)) {
-                // trim whitespace
-                $applicationName = trim($applicationName);
-
-                // also set the agent name
-                $this->useragent = sprintf("%s/%s", $applicationName, $this->useragent);
-            }
-        
-            // load in the cache
-            $this->cache_list = $this->_readCache();
-
-            return true;
+    {
+        // check to see if an alternate server URL is used
+        if (!empty($alternateServerUrl)) {
+            $this->default_server = $alternateServerUrl;
         }
+
+        $this->useragent = sprintf("%s %s", $this->useragent, $this->useragent_version);
+
+        // set the custom user agent
+        if (!empty($applicationName)) {
+            // trim whitespace
+            $applicationName = trim($applicationName);
+
+            // also set the agent name
+            $this->useragent = sprintf("%s/%s", $applicationName, $this->useragent);
+        }
+        
+        // load in the cache
+        $this->cache_list = $this->_readCache();
+
+        return true;
+    }
 
     /**
      * Gets a complete record for an address
@@ -172,10 +171,9 @@ class Net_Geo
      * @access public
      */
     function getRecord($target)
-        {
-        
-            return $this->_execute("getRecord", $target);
-        }
+    {
+        return $this->_execute("getRecord", $target);
+    }
 
     /**
      * Returns the 2-letter ISO 3166 country code
@@ -190,16 +188,14 @@ class Net_Geo
      * @access public
      */
     function getCountry($target)
-        {
-        
-
-            $result = $this->_execute("getCountry", $target);
-            if (is_array($result)) {
-                return $result["COUNTRY"];
-            }
-
-            return $result;
+    {
+        $result = $this->_execute("getCountry", $target);
+        if (is_array($result)) {
+            return $result["COUNTRY"];
         }
+
+        return $result;
+    }
 
     /**
      * Returns an array with keys LAT, LONG, LAT_LONG_GRAN, and STATUS.
@@ -213,11 +209,9 @@ class Net_Geo
      * @access public
      */
     function getLatLong($target)
-        {
-        
-
-            return $this->_execute("getLatLong", $target);
-        }
+    {
+        return $this->_execute("getLatLong", $target);
+    }
 
     /**
      * Included here to make the NetGeo class as similar as possible to
@@ -230,17 +224,15 @@ class Net_Geo
      * @access public
      */
     function getLat($latLongRef)
-        {
-        
-        
-            if (is_array($latLongRef)) {
-                $lat = $latLongRef["LAT"];
-            } else {
-                $lat = 0;
-            }
-
-            return sprintf("%.2f", $lat);
+    {
+        if (is_array($latLongRef)) {
+            $lat = $latLongRef["LAT"];
+        } else {
+            $lat = 0;
         }
+
+        return sprintf("%.2f", $lat);
+    }
 
     /**
      * Included here to make the NetGeo class as similar as possible to
@@ -253,17 +245,15 @@ class Net_Geo
      * @access public
      */
     function getLong($latLongHashRef)
-        {
-        
-
-            if (is_array($latLongHashRef)) {
-                $long = $latLongHashRef["LONG"];
-            } else {
-                $long = 0;
-            }
-
-            return sprintf("%.2f", $long);
+    {
+        if (is_array($latLongHashRef)) {
+            $long = $latLongHashRef["LONG"];
+        } else {
+            $long = 0;
         }
+
+        return sprintf("%.2f", $long);
+    }
 
     /**
      * Interface to the public functions
@@ -274,35 +264,33 @@ class Net_Geo
      * @access private
      */
     function _execute($methodName, $input)
-        {
-        
-
-            // Test the target strings in the input array.  Any targets not in
-            // an acceptable format will have their STATUS field set to INPUT_ERROR.
-            // This method will also store the standardized target into the array
-            // for use as a key in the cache table.
-            $inputArray = $this->_verifyInputFormatArray($methodName, $input);
-            if (PEAR::isError($inputArray)) {
-                return $inputArray;
-            }
+    {
+        // Test the target strings in the input array.  Any targets not in
+        // an acceptable format will have their STATUS field set to INPUT_ERROR.
+        // This method will also store the standardized target into the array
+        // for use as a key in the cache table.
+        $inputArray = $this->_verifyInputFormatArray($methodName, $input);
+        if (PEAR::isError($inputArray)) {
+            return $inputArray;
+        }
 
         
 
-            $resultArray = $this->_processArray($methodName, $inputArray);
+        $resultArray = $this->_processArray($methodName, $inputArray);
         
-            // if there is only one array, move the whole thing up one
-            if (count($resultArray) == 1) {
-                $resultArray = $resultArray[0];
-            }
+        // if there is only one array, move the whole thing up one
+        if (count($resultArray) == 1) {
+            $resultArray = $resultArray[0];
+        }
 
-            // die if we can't write the cache file
-            $error = $this->_writeCache();
-            if (PEAR::isError($error)) {
-                return $error;
-            }
+        // die if we can't write the cache file
+        $error = $this->_writeCache();
+        if (PEAR::isError($error)) {
+            return $error;
+        }
 
-            return $resultArray;        
-        }   
+        return $resultArray;        
+    }   
 
     
     /**
@@ -315,20 +303,19 @@ class Net_Geo
      * @access private
      */
     function _verifyInputFormatArray($methodName, $inputArray)
-        {
-
-            // makes sure that the input is an array
-            // if length is > than ARRAY_LIMIT_LENTH then bomb ou
-            if (count($inputArray) > $this->array_limit) {
-                // raise an error
-                $error = new PEAR_Error("Too many entries. Limit is ".$this->array_limit);
-                return $error;
-            }
-
-            // convert into a useable array
-            $inputArray = $this->_convertInputArray($inputArray);
-            return $inputArray;
+    {
+        // makes sure that the input is an array
+        // if length is > than ARRAY_LIMIT_LENTH then bomb ou
+        if (count($inputArray) > $this->array_limit) {
+            // raise an error
+            $error = new PEAR_Error("Too many entries. Limit is ".$this->array_limit);
+            return $error;
         }
+
+        // convert into a useable array
+        $inputArray = $this->_convertInputArray($inputArray);
+        return $inputArray;
+    }
 
     /**
      * Utility function to check what the input array
@@ -339,21 +326,20 @@ class Net_Geo
      * @access private
      */
     function _convertInputArray($inputArray)
-        {
-
-            // first check the darn thing is actually an array
-            if (!is_array($inputArray)) {
-                $inputArray = array($inputArray);
-            }
-    
-            // now convert to the correct array form
-            foreach ($inputArray as $entry) {
-                $returnArray[]["TARGET"] = $entry;
-            }
-        
-            return $returnArray;
-
+    {
+        // first check the darn thing is actually an array
+        if (!is_array($inputArray)) {
+            $inputArray = array($inputArray);
         }
+    
+        // now convert to the correct array form
+        foreach ($inputArray as $entry) {
+            $returnArray[]["TARGET"] = $entry;
+        }
+        
+        return $returnArray;
+
+    }
 
 
     /** 
@@ -365,45 +351,44 @@ class Net_Geo
      * @access private
      */
     function _processArray($methodName, $inputArray)
-        {
-
-            $i = 0;
-            foreach ($inputArray as $entry) {
-                $entry = $this->_verifyInputFormat($entry);
+    {
+        $i = 0;
+        foreach ($inputArray as $entry) {
+            $entry = $this->_verifyInputFormat($entry);
         
-                if (isset($entry["TARGET"]) && !isset($entry["INPUT_ERROR"])) {
-                    // check the cache
-                    if (!$dataArray[$i] = $this->_checkCache($entry)) {
+            if (isset($entry["TARGET"]) && !isset($entry["INPUT_ERROR"])) {
+                // check the cache
+                if (!$dataArray[$i] = $this->_checkCache($entry)) {
 
-                        // else do the HTTP request
-                        $url = sprintf("%s?method=%s&target=%s", $this->default_server, $methodName, $entry["TARGET"]);
-                        $response = $this->_executeHttpRequest($url);
+                    // else do the HTTP request
+                    $url = sprintf("%s?method=%s&target=%s", $this->default_server, $methodName, $entry["TARGET"]);
+                    $response = $this->_executeHttpRequest($url);
                         
-                        if (!isset($response)) {
-                            $entry["STATUS"] = NETGEO_HTTP_ERROR;
-                        }
-    
-                        // parse it all into something useful
-                        // at this point we should look for NETGEO_LIMIT_EXCEEDED as well
-                        $dataArray[$i] = $this->_processResult($response);
-                    
-                        // pop it into the cache
-                        $this->cache_list[] = $dataArray[$i];
+                    if (!isset($response)) {
+                        $entry["STATUS"] = NETGEO_HTTP_ERROR;
                     }
-                
-                } else {
-                    $dataArray[$i] = $entry;
+    
+                    // parse it all into something useful
+                    // at this point we should look for NETGEO_LIMIT_EXCEEDED as well
+                    $dataArray[$i] = $this->_processResult($response);
+                    
+                    // pop it into the cache
+                    $this->cache_list[] = $dataArray[$i];
                 }
-
-                $i++;
-            }
-        
-            if (is_array($dataArray)) {
-                return $dataArray;
+                
             } else {
-                return array("STATUS"=>NETGEO_HTTP_ERROR);
+                $dataArray[$i] = $entry;
             }
+
+            $i++;
         }
+        
+        if (is_array($dataArray)) {
+            return $dataArray;
+        } else {
+            return array("STATUS"=>NETGEO_HTTP_ERROR);
+        }
+    }
 
     /**
      * Test the input and make sure it is in an acceptable format.  The input
@@ -418,56 +403,56 @@ class Net_Geo
 
      */
     function _verifyInputFormat($inputArray)
-        {
-            $target = trim($inputArray["TARGET"]);
+    {
+        $target = trim($inputArray["TARGET"]);
         
-            // look for AS|as
-            if (preg_match('/^(?:AS|as)?\s?(\d{1,})$/', $target, $matches)) {
-                // check the AS number. Btwn 1 and 65536
-                if ($matches[1] >= 1 && $matches[1] < 65536) {
-                    $standardizedTarget = $matches[0];
-                } else {
-                    $inputArray["INPUT_ERROR"] = NETGEO_INPUT_ERROR;
-                    // raise some error tex
-                    // Bad format for input. AS number must be between 1 and 65536
-                    return $inputArray;
-                }
-
-                // IP number
-            } elseif (preg_match('/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/', $target, $matches)) {
-                if ($matches[1] <= 255 && $matches[2] <= 255 && $matches[3] <= 255 && $matches[4] <= 255) {
-                    $standardizedTarget = $target;
-                } else {
-                    $inputArray["INPUT_ERROR"] = NETGEO_INPUT_ERROR;
-                    // raise some error tex
-                    // Bad format for input. each octet in IP address must be between 0 and 255
-                    return $inputArray;
-                }
-
-                // TLD
-            } elseif (preg_match('/^(?:[\w\-]+\.)*[\w\-]+\.([A-Za-z]{2,3})$/', $target, $matches)) {
-                $tld = $matches[1];
-            
-                // TLD length is either 2 or 3.  If length is 2 we just accept it,
-                // otherwise we test the TLD against the list.
-                if (strlen($tld) == 2 || preg_match('/^(com|net|org|edu|gov|mil|int)/i', $tld)) {
-                    $standardizedTarget = $target;
-                } else {
-                    $inputArray["INPUT_ERROR"] = NETGEO_INPUT_ERROR;
-                    // raise some error tex
-                    // Bad TLD in domain name. 3-letter TLDs must be one of com,net,org,edu,gov,mil,in
-                    return $inputArray;
-                }
+        // look for AS|as
+        if (preg_match('/^(?:AS|as)?\s?(\d{1,})$/', $target, $matches)) {
+            // check the AS number. Btwn 1 and 65536
+            if ($matches[1] >= 1 && $matches[1] < 65536) {
+                $standardizedTarget = $matches[0];
             } else {
                 $inputArray["INPUT_ERROR"] = NETGEO_INPUT_ERROR;
                 // raise some error tex
-                // unrecognized format for inpu
+                // Bad format for input. AS number must be between 1 and 65536
                 return $inputArray;
             }
-        
+
+        // IP number
+        } elseif (preg_match('/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/', $target, $matches)) {
+            if ($matches[1] <= 255 && $matches[2] <= 255 && $matches[3] <= 255 && $matches[4] <= 255) {
+                $standardizedTarget = $target;
+            } else {
+                $inputArray["INPUT_ERROR"] = NETGEO_INPUT_ERROR;
+                // raise some error tex
+                // Bad format for input. each octet in IP address must be between 0 and 255
+                return $inputArray;
+            }
+
+        // TLD
+        } elseif (preg_match('/^(?:[\w\-]+\.)*[\w\-]+\.([A-Za-z]{2,3})$/', $target, $matches)) {
+            $tld = $matches[1];
+            
+            // TLD length is either 2 or 3.  If length is 2 we just accept it,
+            // otherwise we test the TLD against the list.
+            if (strlen($tld) == 2 || preg_match('/^(com|net|org|edu|gov|mil|int)/i', $tld)) {
+                $standardizedTarget = $target;
+            } else {
+                $inputArray["INPUT_ERROR"] = NETGEO_INPUT_ERROR;
+                // raise some error tex
+                // Bad TLD in domain name. 3-letter TLDs must be one of com,net,org,edu,gov,mil,in
+                return $inputArray;
+            }
+        } else {
+            $inputArray["INPUT_ERROR"] = NETGEO_INPUT_ERROR;
+            // raise some error tex
+            // unrecognized format for inpu
             return $inputArray;
-                
         }
+        
+        return $inputArray;
+                
+    }
     
     /**
      * Executes a request to the netgeo server
@@ -476,7 +461,8 @@ class Net_Geo
      * @return string Response from netgeo server
      * @access private
      */
-    function _executeHttpRequest($url) {
+    function _executeHttpRequest($url)
+    {
         $response = "";
 
         if (function_exists('curl_init')) {
@@ -491,7 +477,7 @@ class Net_Geo
             if (!isset($urlinfo["port"])) {
                 $urlinfo["port"] = 80;
             }
-    
+        
             $sp = @fsockopen($urlinfo["host"], $urlinfo["port"], &$errno, &$errstr, $this->default_timeout);
             if (!$sp) {
                 return false;
@@ -502,7 +488,7 @@ class Net_Geo
             while (!feof($sp)) {
                 $response .= fgets($sp,128);
             }
-            fclose ($sp);   
+            fclose ($sp);
         }
 
         return $response;
@@ -516,44 +502,44 @@ class Net_Geo
      * @access private
      */
     function _processResult($response)
-        {
+    {
         
-            $lineArray = preg_split("/\n/", $response);
-            $line = array_shift($lineArray);
+        $lineArray = preg_split("/\n/", $response);
+        $line = array_shift($lineArray);
 
-            // first check for anything icky from the server
-            if (preg_match("/".NETGEO_HTTP_ERROR."/", $line) || preg_match('/^\s*$/', $response)) {
+        // first check for anything icky from the server
+        if (preg_match("/".NETGEO_HTTP_ERROR."/", $line) || preg_match('/^\s*$/', $response)) {
 
-                // empty empty empty
-                if (preg_match('/^\s*$/', $text)) {
-                    $text = "Empty content string";
-                    return array("STATUS"=>$text);
-                }
-
-            } elseif (preg_match("/".NETGEO_LIMIT_EXCEEDED."/", $line)) {
+            // empty empty empty
+            if (preg_match('/^\s*$/', $text)) {
+                $text = "Empty content string";
                 return array("STATUS"=>$text);
             }
 
-            // now loop through. This should being us out at TARGET
-            while (isset($line) && !preg_match("/^TARGET:/", $line)) {
-                $line = array_shift($lineArray);
-            }
-
-            // keep going
-            while (isset($line)) {
-                if (preg_match("/^TARGET:\s+(.*\S)\s*<br>/", $line, $matches)) {
-                    $retarray["TARGET"] = $matches[1];
-                } elseif (preg_match("/^STATUS:\s+([\w\s]+\S)\s*<br>/", $line, $matches)) {
-                    $retarray["STATUS"] = $matches[1];
-                } elseif (preg_match("/^(\w+):\s+(.*\S)\s*<br>/", $line, $matches)) {
-                    $retarray[$matches[1]] = $matches[2];
-                }
-                $line = array_shift($lineArray);
-            }
-
-            return $retarray;   
-
+        } elseif (preg_match("/".NETGEO_LIMIT_EXCEEDED."/", $line)) {
+            return array("STATUS"=>$text);
         }
+
+        // now loop through. This should being us out at TARGET
+        while (isset($line) && !preg_match("/^TARGET:/", $line)) {
+            $line = array_shift($lineArray);
+        }
+
+        // keep going
+        while (isset($line)) {
+            if (preg_match("/^TARGET:\s+(.*\S)\s*<br>/", $line, $matches)) {
+                $retarray["TARGET"] = $matches[1];
+            } elseif (preg_match("/^STATUS:\s+([\w\s]+\S)\s*<br>/", $line, $matches)) {
+                $retarray["STATUS"] = $matches[1];
+            } elseif (preg_match("/^(\w+):\s+(.*\S)\s*<br>/", $line, $matches)) {
+                $retarray[$matches[1]] = $matches[2];
+            }
+            $line = array_shift($lineArray);
+        }
+
+        return $retarray;   
+
+    }
 
     /**
      * Writes the cache to disk
@@ -564,23 +550,23 @@ class Net_Geo
      * @access private
      */
     function _writeCache()
-        {
+    {
         
-            if (!is_dir($this->cache_path)) {
-                return new PEAR_Error("No such cache directory ".$this->cache_path);
-            }
-
-            $output = serialize($this->cache_list);
-            $fp = @fopen($this->cache_path."/".$this->cache_file, "w");
-            if (!$fp) {
-                return new PEAR_Error("Unable to write to cache");
-            }
-
-            fwrite($fp, $output);
-
-            fclose($fp);
-            return true;
+        if (!is_dir($this->cache_path)) {
+            return new PEAR_Error("No such cache directory ".$this->cache_path);
         }
+
+        $output = serialize($this->cache_list);
+        $fp = @fopen($this->cache_path."/".$this->cache_file, "w");
+        if (!$fp) {
+            return new PEAR_Error("Unable to write to cache");
+        }
+
+        fwrite($fp, $output);
+
+        fclose($fp);
+        return true;
+    }
 
     /**
      * Loads the cache from disk
@@ -589,23 +575,23 @@ class Net_Geo
      * @access private
      */
     function _readCache()
-        {
+    {
 
-            if (!is_dir($this->cache_path)) {
-                return new PEAR_Error("No such cache directory ".$this->cache_path);
-            }
-
-            // cache might not exist yet so don't error out. 
-            // can we raise a warning but not return it?
-            if (!is_readable($this->cache_path."/".$this->cache_file)) {
-                return array();
-            }
-
-            $input = join('', file($this->cache_path."/".$this->cache_file));
-            $data = unserialize($input);
-
-            return $data;
+        if (!is_dir($this->cache_path)) {
+            return new PEAR_Error("No such cache directory ".$this->cache_path);
         }
+
+        // cache might not exist yet so don't error out. 
+        // can we raise a warning but not return it?
+        if (!is_readable($this->cache_path."/".$this->cache_file)) {
+            return array();
+        }
+
+        $input = join('', file($this->cache_path."/".$this->cache_file));
+        $data = unserialize($input);
+
+        return $data;
+    }
 
     /**
      * Checks the cache for an entry
@@ -616,16 +602,16 @@ class Net_Geo
      * @access private
      */
     function _checkCache($entry)
-        {
-            foreach ($this->cache_list as $cache_entry) {
-                //echo $entry["TARGET"], "\n";
+    {
+        foreach ($this->cache_list as $cache_entry) {
+            //echo $entry["TARGET"], "\n";
             
-                if (@in_array($entry["TARGET"], $cache_entry)) {
-                    return $cache_entry;
-                }
+            if (@in_array($entry["TARGET"], $cache_entry)) {
+                return $cache_entry;
             }
-            return false;
         }
+        return false;
+    }
 }
 
 
