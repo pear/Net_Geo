@@ -1,14 +1,17 @@
 <?xml version="1.0" encoding="ISO-8859-1" ?>
+<!DOCTYPE package SYSTEM "../package.dtd">
 <!-- do not use the "Type" attribute here, that one is only for
      generated package.xml files -->
-<package>
+<package version="1.0">
   <name>Net_Geo</name>
   <summary>Geographical locations based on Internet address</summary>
-  <maintainer>
-    <user>graeme</user>
-    <name>Graeme Merrall</name>
-    <email>graeme@inetix.com.au</email>
-  </maintainer>
+  <maintainers>
+    <maintainer>
+      <user>graeme</user>
+      <name>Graeme Merrall</name>
+      <email>graeme@inetix.com.au</email>
+    </maintainer>
+  </maintainers>
   <release>
     <version>0.9</version>
     <date>2002-01-30</date>
@@ -18,11 +21,11 @@
       Although the NetGeo server will accept domain names, the quality is very
       sporadic. Use IP or AS numbers for a better result.
     </notes>
+    <filelist>
+      <dir name="/" baseinstalldir="Net">
+	<file role="php">Geo.php</file>
+	<file role="doc">README</file>
+      </dir>
+    </filelist>
   </release>
-  <filelist>
-    <dir name="/" baseinstalldir="Net">
-      <file role="php">Geo.php</file>
-      <file role="doc">README</file>
-    </dir>
-  </filelist>
 </package>
