@@ -31,6 +31,9 @@
                 <file role="doc">README</file>
       </dir>
     </filelist>
+    <deps>
+     <dep type="pkg" rel="has">Cache</dep>
+    </deps>
     </release>
     <changelog>
       <release>
