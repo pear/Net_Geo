@@ -19,11 +19,13 @@
     <release>
         <license>PHP</license>
         <version>1.0</version>
-        <date>2002-05-04</date>
+        <date>2004-12-22</date>
         <state>stable</state>
         <notes>
                 * Added use of pear Cache::Function
                 * Added additional use of localizer API (see READ me for URL)
+                * Bug #10 fixed
+                * Typo in example fixed.
         </notes>
     <filelist>
       <dir name="/" baseinstalldir="Net">
