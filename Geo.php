@@ -39,8 +39,6 @@ require_once 'PEAR.php';
  * @author Graeme Merrall <graeme@inetix.com.au>
  */
 
-error_reporting(-1);
-
 define('NETGEO_INPUT_ERROR', 'INPUT_ERROR');
 define('NETGEO_HTTP_ERROR', 'HTTP_ERROR');
 define('NETGEO_NO_MATCH', 'NO MATCH');
