@@ -20,7 +20,7 @@
     </notes>
   </release>
   <filelist>
-    <dir name="/" baseinstall="Net">
+    <dir name="/" baseinstalldir="Net">
       <file role="php">Geo.php</file>
       <file role="doc">README</file>
     </dir>
