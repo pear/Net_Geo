@@ -18,14 +18,10 @@
     </maintainers>
     <release>
         <license>PHP</license>
-        <version>1.0.1</version>
-        <date>2005-10-25</date>
+        <version>1.x.x</version>
+        <date>2005-xx-xx</date>
         <state>stable</state>
         <notes>
-                * Added use of pear Cache::Function
-                * Added additional use of localizer API (see READ me for URL)
-                * Bug #10 fixed
-                * Typo in example fixed.
         </notes>
     <filelist>
       <dir name="/" baseinstalldir="Net">
@@ -38,16 +34,4 @@
      <dep type="pkg" rel="has">Cache</dep>
     </deps>
     </release>
-    <changelog>
-      <release>
-        <version>0.9</version>
-        <date>2002-01-30</date>
-        <state>beta</state>
-        <notes>
-          Very simplistic caching used which could do with a tidy up.
-          Although the NetGeo server will accept domain names, the quality is very
-          sporadic. Use IP or AS numbers for a better result.
-        </notes>
-    </release>
-    </changelog>
 </package>
