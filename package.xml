@@ -19,7 +19,7 @@
     <release>
         <license>PHP</license>
         <version>1.0.1</version>
-        <date>2004-12-22</date>
+        <date>2005-10-25</date>
         <state>stable</state>
         <notes>
                 * Added use of pear Cache::Function
