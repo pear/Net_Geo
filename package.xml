@@ -7,31 +7,39 @@
   <summary>Geographical locations based on Internet address</summary>
   <description>
     Obtains geogrphical information based on IP number, domain name,
-    or AS number. Makes use of CAIDA Net_Geo lookup or locaizer extension.
+    or AS number. Makes use of CAIDA Net_Geo lookup, HostIP or
+    localizer extension.
   </description>
+  <license>PHP License</license>
   <maintainers>
     <maintainer>
-      <user>graeme</user>
-      <name>Graeme Merrall</name>
-      <email>graeme@inetix.com.au</email>
+      <user>ehlersd</user>
+      <role>lead</role>
+      <name>Darren Ehlers</name>
+      <email>darren@ehlersconsulting.net</email>
     </maintainer>
-    </maintainers>
-    <release>
-        <license>PHP</license>
-        <version>1.x.x</version>
-        <date>2005-xx-xx</date>
-        <state>stable</state>
-        <notes>
-        </notes>
+  </maintainers>
+
+  <release>
+    <version>1.0.2</version>
+    <state>stable</state>
+    <date>2006-03-19</date>
+    <license>PHP License</license>
+    <notes>The NetGEO database is extremely old with no plans to update
+      or further support it.  It has been updated to add in support for
+      the HostIP service, as well as a few bug fixes (related to the use
+      of the alternate_url options).
+    </notes>
     <filelist>
       <dir name="/" baseinstalldir="Net">
-                <file role="php">Geo.php</file>
-                <file role="doc">README</file>
+        <file role="php">Geo.php</file>
+        <file role="doc">README</file>
       </dir>
     </filelist>
-    <deps>
-     <dep type="pkg" rel="has">PEAR</dep>
-     <dep type="pkg" rel="has">Cache</dep>
-    </deps>
-    </release>
+  </release>
+
+  <deps>
+    <dep type="pkg" rel="has">PEAR</dep>
+    <dep type="pkg" rel="has">Cache</dep>
+  </deps>
 </package>

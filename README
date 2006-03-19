@@ -6,3 +6,23 @@ localizer is available from http://jan.kneschke.de/projects/localizer/
 
 Even though the NetGeo server will process domain names I find that success is
 sporadic. Using IP addresses or AS numbers will work everytime.
+
+2006-03-16 Darren Ehlers <darren@ehlersconsulting.net>
+
+ * - Added support for the HostIP service, which still retaining the same
+ *   existing functionality (by default).  To use the HostIP service, simply
+ *   add the setService() call as in the following example:
+ *
+ *   > $geo = new Net_Geo();
+ *   > $geo->setService('hostip');
+ *   > $geo->getRecord("php.net");
+ *
+ * - Fixed a number of minor bugs, specifically related to providing
+ *   alternate URLs.
+ *
+ * - Fixed code to allow changing the current service via the setService call,
+ *   without having to create a new object.
+ *
+ * - Added RAWDATA result array item which contains the complete returned
+ *   array data.  The rest of the result array for the HostIP service is
+ *   setup to match the existing CAIDA result array.

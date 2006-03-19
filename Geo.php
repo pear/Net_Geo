@@ -14,6 +14,7 @@
 // | license@php.net so we can mail you a copy immediately.               |
 // +----------------------------------------------------------------------+
 // | Authors: Graeme Merrall <graeme@inetix.com.au>                       |
+// |          Darren Ehlers <darren@ehlersconsulting.net>                 |
 // |                                                                      |
 // +----------------------------------------------------------------------+
 //
@@ -38,9 +39,32 @@ require_once 'Cache/Function.php';
  * Query service type (CAIDA or localizer) is not available as a constructer
  * to retain compatibility with existing CAIDA NetGeo classes (perl + java)
  *
- * @version 1.0
+ * CHANGES -- 2006-03-16 Darren Ehlers <darren@ehlersconsulting.net>
+ * |
+ * - Added support for the HostIP service, which still retaining the same
+ *   existing functionality (by default).  To use the HostIP service, simply
+ *   add the setService() call as in the following example:
+ *
+ *   > $geo = new Net_Geo();
+ *   > $geo->setService('hostip');
+ *   > $geo->getRecord("php.net");
+ *
+ * - Fixed a number of minor bugs, specifically related to providing
+ *   alternate URLs.
+ *
+ * - Fixed code to allow changing the current service via the setService call,
+ *   without having to create a new object.
+ *
+ * - Added RAWDATA result array item which contains the complete returned
+ *   array data.  The rest of the result array for the HostIP service is
+ *   setup to match the existing CAIDA result array.
+ * |
+ * CHANGES -- 2006-03-16 Darren Ehlers <darren@ehlersconsulting.net>
+ *
+ * @version 1.0.2
  * @package NetGeo
  * @author Graeme Merrall <graeme@inetix.com.au>
+ * @author Darren Ehlers <darren@ehlersconsulting.net>
  */
 
 define('NETGEO_INPUT_ERROR', 'INPUT_ERROR');
@@ -53,7 +77,7 @@ class Net_Geo
 {
 
     /**
-     * Path to local cache file. 
+     * Path to local cache file.
      * Caching is compulsory to reduce load on CAIDA server
      *
      * @var string
@@ -63,7 +87,7 @@ class Net_Geo
 
     /**
      * How long to wait befire rechecking cached entries in *days*
-     * This should be comething nice and high
+     * This should be something nice and high
      *
      * @var in
      * @access public
@@ -72,7 +96,7 @@ class Net_Geo
 
      /**
      * CAIDA only
-     * 
+     *
      * Maximum length of time, in seconds, which will be allowed during a whois
      * lookup by the NetGeo server.
      * The actual default value is maintained by the server.
@@ -81,21 +105,32 @@ class Net_Geo
      * @access public
      */
     var $default_timeout = 60;
-    
+
     /**
      * CAIDA only
-     * 
+     *
      * Location of the default netgeo server
-     * If port not speicifed, defaults to 80
+     * If port not specified, defaults to 80
      *
      * @var string
      * @access public
      */
-    var $default_server = "http://netgeo.caida.org/perl/netgeo.cgi";
+    var $default_caida_server = "http://netgeo.caida.org/perl/netgeo.cgi";
+
+    /**
+     * HostIP only
+     *
+     * Location of the default hostip server
+     * If port not specified, defaults to 80
+     *
+     * @var string
+     * @access public
+     */
+    var $default_hostip_server = "http://api.hostip.info/";
 
     /**
      * localizer only
-     * 
+     *
      * Location of the localizer data file
      *
      * @var string
@@ -111,7 +146,7 @@ class Net_Geo
      @ @access private
      */
     var $service;
-    
+
     /**
      * Cache filename prefix
      *
@@ -122,7 +157,7 @@ class Net_Geo
 
     /**
      * CAIDA only
-     * 
+     *
      * User Agent string.
      *
      * @var string
@@ -132,7 +167,7 @@ class Net_Geo
 
     /**
      * CAIDA only
-     * 
+     *
      * Class version
      *
      * @var string
@@ -142,7 +177,7 @@ class Net_Geo
 
     /**
      * CAIDA only
-     * 
+     *
      * How many targets can be read in at once
      * Should be enough for most everyone
      *
@@ -168,6 +203,30 @@ class Net_Geo
      */
      var $netgeo_global = "netgeo_global";
 
+    /**
+     * Complete User Agent string + version
+     *
+     * @var string
+     * @access private
+     */
+     var $useragent_string;
+
+    /**
+     * Location of the default server
+     * If port not specified, defaults to 80
+     *
+     * @var string
+     * @access private
+     */
+     var $default_server;
+
+    /**
+     * Value of last "target" lookup
+     *
+     * @var string
+     * @access private
+     */
+     var $last_target;
 
     /**
      * Constructor
@@ -184,10 +243,10 @@ class Net_Geo
     {
         $this->applicationName = $applicationName;
         $this->alternateServerUrl = $alternateServerUrl;
-      
+
         // init cache object
-        $this->cache = new Cache_Function('file', 
-                                          array('cache_dir' => $this->cache_path, 
+        $this->cache = new Cache_Function('file',
+                                          array('cache_dir' => $this->cache_path,
                                                 'filename_prefix' => $this->cache_prefix
                                                ),
                                           $this->cache_ttl * 86400
@@ -196,50 +255,83 @@ class Net_Geo
         return true;
     }
 
-    
-    function setService($service = "caida") {
-        
+    /**
+     * Sets the service to use to lookup data (defaults to 'caida')
+     *
+     * @param string $service Service to use (caida, hostip or localizer)
+     * @return bool
+     * @access public
+     */
+    function setService($service = "caida")
+    {
         if ($service == "localizer") {
-            
+
             if (@localizer_read($this->localizer_data, FALSE) == FALSE) {
                 PEAR::raiseError("Can't read localizer data file ".$this->localizer_data);
                 return false;
             }
 
         } elseif ($service == "caida") {
-            
+
             // check to see if an alternate server URL is used
-            if (!empty($alternateServerUrl)) {
+            if (!empty($this->alternateServerUrl)) {
                 $this->default_server = $this->alternateServerUrl;
             }
-    
-            $this->useragent = sprintf("%s %s", $this->useragent, 
-                                                $this->useragent_version
+            else {
+                $this->default_server = $this->default_caida_server;
+            }
+
+            $this->useragent_string = sprintf("%s %s", $this->useragent,
+	                                                $this->useragent_version
                                       );
-    
+
             // set the custom user agent
-            if (!empty($applicationName)) {
+            if (!empty($this->applicationName)) {
                 // trim whitespace
-                $applicationName = trim($applicationName);
-    
+                $this->applicationName = trim($this->applicationName);
+
                 // also set the agent name
-                $this->useragent = sprintf("%s/%s", $this->applicationName, 
-                                                    $this->useragent
+                $this->useragent_string = sprintf("%s/%s", $this->applicationName,
+                                       		             $this->useragent
                                           );
             }
-        
+
+        } elseif ($service == "hostip") {
+
+            // check to see if an alternate server URL is used
+            if (!empty($this->alternateServerUrl)) {
+                $this->default_server = $this->alternateServerUrl;
+            }
+            else {
+            	$this->default_server = $this->default_hostip_server;
+            }
+
+            $this->useragent_string = sprintf("%s %s", $this->useragent,
+                                   		             $this->useragent_version
+                                      );
+
+            // set the custom user agent
+            if (!empty($this->applicationName)) {
+                // trim whitespace
+                $this->applicationName = trim($this->applicationName);
+
+                // also set the agent name
+                $this->useragent_string = sprintf("%s/%s", $this->applicationName,
+                                       		             $this->useragent
+                                          );
+            }
+
         } else {
+
             // return error
             return new PEAR_Error("No service specified");
 
         }
 
-
         $this->service = $service;
         return true;
-            
     }
-        
+
     /**
      * Gets a complete record for an address
      * Returns either a single or multidimentional arrray
@@ -258,7 +350,7 @@ class Net_Geo
      * Returns the 2-letter ISO 3166 country code
      * Returns NO_MATCH if the AS number has been looked up
      * but nothing was found in the whois lookups.
-     * Returns NO_COUNTRY if the lookup returned a record 
+     * Returns NO_COUNTRY if the lookup returned a record
      * but no country could be found.
      * Returns an empty string if nothing was found in the database
      *
@@ -296,12 +388,12 @@ class Net_Geo
      * Included here to make the NetGeo class as similar as possible to
      * the NetGeoClient.java interface.
      * It's probably just as easy for the user to extract lat and long directly
-     * from the array. 
+     * from the array.
      *
      * @param string $target single address
      * @return double
      * @access public
-     */
+    */
     function getLat($latLongRef)
     {
         if (is_array($latLongRef)) {
@@ -344,7 +436,6 @@ class Net_Geo
      */
     function _execute($methodName, $input)
     {
-
         // if we haven't got a service set, then do it now
         if (empty($this->service)) {
             $this->setService();
@@ -360,16 +451,15 @@ class Net_Geo
         }
 
         $resultArray = $this->_processArray($methodName, $inputArray);
-        
+
         // if there is only one array, move the whole thing up one
         if (count($resultArray) == 1) {
             $resultArray = $resultArray[0];
         }
 
-        return $resultArray;        
-    }   
+        return $resultArray;
+    }
 
-    
     /**
      * Verify the type of the target argument and verify types of array elements
      * Also converts the input array into the start of the output array
@@ -408,22 +498,21 @@ class Net_Geo
         if (!is_array($inputArray)) {
             $inputArray = array($inputArray);
         }
-    
+
         // now convert to the correct array form
         foreach ($inputArray as $entry) {
             $returnArray[]["TARGET"] = $entry;
         }
-        
-        return $returnArray;
 
+        return $returnArray;
     }
 
 
-    /** 
+    /**
      * Main function that processes addresses
      *
      * It might be a good idea to move the caching up one level?
-     * 
+     *
      * @param string $methodName Lookup method
      * @param array  $inputArray Formatted address array
      * @return array
@@ -433,16 +522,34 @@ class Net_Geo
     {
         $i = 0;
         foreach ($inputArray as $entry) {
-            $entry = $this->_verifyInputFormat($entry);
-        
+	        $entry = $this->_verifyInputFormat($entry);
+
             if (isset($entry["TARGET"]) && !isset($entry["INPUT_ERROR"])) {
+
+            	$this->last_target = $entry["TARGET"];
 
                 // set up the cache work around
                 $GLOBALS[$this->netgeo_global] =& $this;
-                
+
                 if ($this->service == "localizer") {
 
                     $response = $this->cache->call('localizer_search', $entry["TARGET"]);
+
+                } elseif ($this->service == 'hostip') {
+
+					if (ip2long($entry["TARGET"]) === false) {
+
+ 						$ip = gethostbyname($entry["TARGET"]);
+ 					} else {
+
+ 						$ip = $entry["TARGET"];
+ 					}
+
+                    $url = sprintf("%s?ip=%s", $this->default_server,
+                                               $ip
+                                  );
+
+                    $response =& $this->cache->call($this->netgeo_global.'->_executeHttpRequest', $url);
 
                 } else {
 
@@ -452,7 +559,7 @@ class Net_Geo
                                   );
 
                     $response =& $this->cache->call($this->netgeo_global.'->_executeHttpRequest', $url);
-    
+
                 }
 
                 if (!isset($response)) {
@@ -462,14 +569,14 @@ class Net_Geo
                 // parse it all into something useful
                 // at this point we should look for NETGEO_LIMIT_EXCEEDED as well
                 $dataArray[$i] = $this->_processResult($response);
-                
+
             } else {
                 $dataArray[$i] = $entry;
             }
 
             $i++;
         }
-        
+
         if (is_array($dataArray)) {
             return $dataArray;
         } else {
@@ -483,18 +590,18 @@ class Net_Geo
      * dotted decimal format, or a domain name.  Stores the standardized targe
      * string into the hash if input target is valid format, otherwise stores
      * undef into hash.
-     * 
+     *
      * @param array  $inputArray Address(es) to lookup
      * @return array
      * @access private
-
      */
     function _verifyInputFormat($inputArray)
     {
         $target = trim($inputArray["TARGET"]);
-        
+
         // look for AS|as
         if (preg_match('/^(?:AS|as)?\s?(\d{1,})$/', $target, $matches)) {
+
             // check the AS number. Btwn 1 and 65536
             if ($matches[1] >= 1 && $matches[1] < 65536) {
                 $standardizedTarget = $matches[0];
@@ -507,6 +614,7 @@ class Net_Geo
 
         // IP number
         } elseif (preg_match('/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/', $target, $matches)) {
+
             if ($matches[1] <= 255 && $matches[2] <= 255 && $matches[3] <= 255 && $matches[4] <= 255) {
                 $standardizedTarget = $target;
             } else {
@@ -518,8 +626,9 @@ class Net_Geo
 
         // TLD
         } elseif (preg_match('/^(?:[\w\-]+\.)*[\w\-]+\.([A-Za-z]{2,3})$/', $target, $matches)) {
+
             $tld = $matches[1];
-            
+
             // TLD length is either 2 or 3.  If length is 2 we just accept it,
             // otherwise we test the TLD against the list.
             if (strlen($tld) == 2 || preg_match('/^(com|net|org|edu|gov|mil|int)/i', $tld)) {
@@ -530,17 +639,19 @@ class Net_Geo
                 // Bad TLD in domain name. 3-letter TLDs must be one of com,net,org,edu,gov,mil,in
                 return $inputArray;
             }
+
         } else {
+
             $inputArray["INPUT_ERROR"] = NETGEO_INPUT_ERROR;
             // raise some error text
             // unrecognized format for input
             return $inputArray;
+
         }
-        
+
         return $inputArray;
-                
     }
-    
+
     /**
      * Executes a request to the netgeo server
      *
@@ -563,14 +674,14 @@ class Net_Geo
             if (!isset($urlinfo["port"])) {
                 $urlinfo["port"] = 80;
             }
-        
+
             $sp = @fsockopen($urlinfo["host"], $urlinfo["port"], $errno, $errstr, $this->default_timeout);
             if (!$sp) {
                 return false;
             }
-    
+
             fputs($sp, "GET " . $urlinfo["path"] ."?". $urlinfo["query"] . " HTTP/1.0\r\n");
-            fputs($sp, "User-Agent: " . $this->useragent . "\r\n\r\n");
+            fputs($sp, "User-Agent: " . $this->useragent_string . "\r\n\r\n");
             while (!feof($sp)) {
                 $response .= fgets($sp,128);
             }
@@ -579,12 +690,12 @@ class Net_Geo
 
         return $response;
     }
-   
+
     /**
      * Parses the results from the server into an array
-     * 
+     *
      * @param string $response Response from netgeo server
-     * @return array 
+     * @return array
      * @access private
      */
     function _processResult($response)
@@ -599,7 +710,7 @@ class Net_Geo
             }
 
         } elseif ($this->service == "caida") {
-       
+
             $lineArray = preg_split("/\n/", $response);
             $line = array_shift($lineArray);
 
@@ -613,6 +724,7 @@ class Net_Geo
                 }
 
             } elseif (preg_match("/".NETGEO_LIMIT_EXCEEDED."/", $line)) {
+                $text = 'Query limit exceeded';
                 return array("STATUS"=>$text);
             }
 
@@ -624,18 +736,60 @@ class Net_Geo
             // keep going
             while (isset($line)) {
                 if (preg_match("/^TARGET:\s+(.*\S)\s*<br>/", $line, $matches)) {
-                    $retarray["TARGET"] = $matches[1];
+                    $retval["TARGET"] = $matches[1];
                 } elseif (preg_match("/^STATUS:\s+([\w\s]+\S)\s*<br>/", $line, $matches)) {
-                    $retarray["STATUS"] = $matches[1];
+                    $retval["STATUS"] = $matches[1];
                 } elseif (preg_match("/^(\w+):\s+(.*\S)\s*<br>/", $line, $matches)) {
-                    $retarray[$matches[1]] = $matches[2];
+                    $retval[$matches[1]] = $matches[2];
                 }
                 $line = array_shift($lineArray);
             }
 
+			$retarray = array('TARGET'	=> $this->last_target,
+							  'CITY'	=> $retval['CITY'],
+							  'STATE'	=> $retval['STATE'],
+							  'COUNTRY'	=> $retval['COUNTRY'],
+							  'LAT'		=> $retval['LAT'],
+							  'LONG'	=> $retval['LONG'],
+							  'STATUS'	=> 'OK',
+							  'RAWDATA'	=> $retval				);
+
+        } elseif ($this->service == "hostip") {
+
+			$options = array(	'addDecl'			=> TRUE,
+	   							'encoding' 			=> 'ISO-8859-1',
+	   							'indent' 			=> '  ',
+	   							'indentAttributes' 	=> '_auto',
+	   							'rootName' 			=> __CLASS__,
+	   							'defaultTagName' 	=> 'members',
+	   							'typeHints' 		=> TRUE
+							);
+
+		    require_once 'Extras/XML/Unserializer.php';
+			$hUnserializer = new XML_Unserializer($options);
+
+			$status = $hUnserializer->unserialize($response);
+			if (PEAR::isError($status))
+			{
+				throw new PEAR_Exception(__CLASS__.':'.__METHOD__." Unserializer Error [".$status->getMessage()."]", $status->getCode());
+			}
+
+			$retval = $hUnserializer->getUnserializedData();
+
+			$cityState 	= explode(',', $retval['gml:featureMember']['Hostip']['gml:name']);
+			$latLong	= explode(',', $retval['gml:featureMember']['Hostip']['ipLocation']['gml:PointProperty']['gml:Point']['gml:coordinates']);
+
+			$retarray = array('TARGET'	=> $this->last_target,
+							  'CITY'	=> trim($cityState[0]),
+							  'STATE'	=> trim($cityState[1]),
+							  'COUNTRY'	=> trim($retval['gml:featureMember']['Hostip']['countryAbbrev']),
+							  'LAT'		=> trim($latLong[1]),
+							  'LONG'	=> trim($latLong[0]),
+							  'STATUS'	=> 'OK',
+							  'RAWDATA'	=> $retval				);
         }
 
-        return $retarray;   
+        return $retarray;
 
     }
 
