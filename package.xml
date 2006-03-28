@@ -18,17 +18,20 @@
       <name>Darren Ehlers</name>
       <email>darren@ehlersconsulting.net</email>
     </maintainer>
+    <maintainer>
+      <user>graeme</user>
+      <role>lead, inactive</role>
+      <name>Graeme Merrall</name>
+      <email>graeme@inetix.com.au</email>
+    </maintainer>
   </maintainers>
 
   <release>
-    <version>1.0.2</version>
+    <version>1.0.3</version>
     <state>stable</state>
-    <date>2006-03-19</date>
+    <date>2006-03-28</date>
     <license>PHP License</license>
-    <notes>The NetGEO database is extremely old with no plans to update
-      or further support it.  It has been updated to add in support for
-      the HostIP service, as well as a few bug fixes (related to the use
-      of the alternate_url options).
+    <notes>Removed the PHP5 dependency, and added the Package "XML_Serializer" dependency.
     </notes>
     <filelist>
       <dir name="/" baseinstalldir="Net">
@@ -38,8 +41,77 @@
     </filelist>
   </release>
 
+  <changelog>
+    <release>
+      <version>1.0.3</version>
+      <state>stable</state>
+      <date>2006-03-28</date>
+      <license>PHP License</license>
+      <notes>Removed the PHP5 dependency, and added the Package "XML_Serializer" dependency.
+      </notes>
+      <filelist>
+        <dir name="/" baseinstalldir="Net">
+          <file role="php">Geo.php</file>
+          <file role="doc">README</file>
+        </dir>
+      </filelist>
+    </release>
+
+    <release>
+      <version>1.0.2</version>
+      <state>stable</state>
+      <date>2006-03-19</date>
+      <license>PHP License</license>
+      <notes>The NetGEO database is extremely old with no plans to update
+        or further support it.  It has been updated to add in support for
+        the HostIP service, as well as a few bug fixes (related to the use
+        of the alternate_url options).
+      </notes>
+      <filelist>
+        <dir name="/" baseinstalldir="Net">
+  	  <file role="php">Geo.php</file>
+	  <file role="doc">README</file>
+        </dir>
+      </filelist>
+    </release>
+
+    <release>
+      <version>1.0.1</version>
+      <state>stable</state>
+      <date>2005-10-25</date>
+      <license>PHP License</license>
+      <notes>* Added use of pear Cache::Function
+        * Added additional use of localizer API (see READ me for URL)
+        * Bug #10 fixed
+        * Typo in example fixed.
+      </notes>
+      <filelist>
+        <dir name="/" baseinstalldir="Net">
+  	  <file role="php">Geo.php</file>
+	  <file role="doc">README</file>
+        </dir>
+      </filelist>
+    </release>
+
+    <release>
+      <version>1.0</version>
+      <state>stable</state>
+      <date>2002-05-05</date>
+      <license>PHP License</license>
+      <notes>* Added use of pear Cache::Function
+        * Added additional use of localizer API (see READ me for URL)
+      </notes>
+      <filelist>
+        <dir name="/" baseinstalldir="Net">
+  	  <file role="php">Geo.php</file>
+	  <file role="doc">README</file>
+        </dir>
+      </filelist>
+    </release>
+  </changelog>
+
   <deps>
-    <dep type="pkg" rel="has">PEAR</dep>
     <dep type="pkg" rel="has">Cache</dep>
+    <dep type="pkg" rel="has">XML_Serializer</dep>
   </deps>
 </package>

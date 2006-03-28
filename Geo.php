@@ -61,10 +61,10 @@ require_once 'Cache/Function.php';
  * |
  * CHANGES -- 2006-03-16 Darren Ehlers <darren@ehlersconsulting.net>
  *
- * @version 1.0.2
+ * @version 1.0.3
  * @package NetGeo
- * @author Graeme Merrall <graeme@inetix.com.au>
  * @author Darren Ehlers <darren@ehlersconsulting.net>
+ * @author Graeme Merrall <graeme@inetix.com.au>
  */
 
 define('NETGEO_INPUT_ERROR', 'INPUT_ERROR');
@@ -745,14 +745,8 @@ class Net_Geo
                 $line = array_shift($lineArray);
             }
 
-			$retarray = array('TARGET'	=> $this->last_target,
-							  'CITY'	=> $retval['CITY'],
-							  'STATE'	=> $retval['STATE'],
-							  'COUNTRY'	=> $retval['COUNTRY'],
-							  'LAT'		=> $retval['LAT'],
-							  'LONG'	=> $retval['LONG'],
-							  'STATUS'	=> 'OK',
-							  'RAWDATA'	=> $retval				);
+			$retarray = $retval;
+			$retarray['RAWDATA']	= $retval;
 
         } elseif ($this->service == "hostip") {
 
@@ -771,7 +765,7 @@ class Net_Geo
 			$status = $hUnserializer->unserialize($response);
 			if (PEAR::isError($status))
 			{
-				throw new PEAR_Exception(__CLASS__.':'.__METHOD__." Unserializer Error [".$status->getMessage()."]", $status->getCode());
+				return array("STATUS" => $status->getMessage());
 			}
 
 			$retval = $hUnserializer->getUnserializedData();
@@ -794,6 +788,5 @@ class Net_Geo
     }
 
 }
-
 
 ?>
