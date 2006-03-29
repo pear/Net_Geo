@@ -61,7 +61,7 @@ require_once 'Cache/Function.php';
  * |
  * CHANGES -- 2006-03-16 Darren Ehlers <darren@ehlersconsulting.net>
  *
- * @version 1.0.3
+ * @version 1.0.4
  * @package NetGeo
  * @author Darren Ehlers <darren@ehlersconsulting.net>
  * @author Graeme Merrall <graeme@inetix.com.au>
@@ -759,7 +759,7 @@ class Net_Geo
 	   							'typeHints' 		=> TRUE
 							);
 
-		    require_once 'Extras/XML/Unserializer.php';
+		    require_once 'XML/Unserializer.php';
 			$hUnserializer = new XML_Unserializer($options);
 
 			$status = $hUnserializer->unserialize($response);

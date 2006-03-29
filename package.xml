@@ -6,7 +6,7 @@
   <name>Net_Geo</name>
   <summary>Geographical locations based on Internet address</summary>
   <description>
-    Obtains geogrphical information based on IP number, domain name,
+    Obtains geographical information based on IP number, domain name,
     or AS number. Makes use of CAIDA Net_Geo lookup, HostIP or
     localizer extension.
   </description>
@@ -20,18 +20,18 @@
     </maintainer>
     <maintainer>
       <user>graeme</user>
-      <role>lead, inactive</role>
+      <role>lead</role>
       <name>Graeme Merrall</name>
       <email>graeme@inetix.com.au</email>
     </maintainer>
   </maintainers>
 
   <release>
-    <version>1.0.3</version>
+    <version>1.0.4</version>
     <state>stable</state>
-    <date>2006-03-28</date>
+    <date>2006-03-29</date>
     <license>PHP License</license>
-    <notes>Removed the PHP5 dependency, and added the Package "XML_Serializer" dependency.
+    <notes>Corrected wrong include path for XML_Serializer package (used for hostip service)
     </notes>
     <filelist>
       <dir name="/" baseinstalldir="Net">
@@ -42,6 +42,21 @@
   </release>
 
   <changelog>
+    <release>
+      <version>1.0.4</version>
+      <state>stable</state>
+      <date>2006-03-29</date>
+      <license>PHP License</license>
+      <notes>Corrected wrong include path for XML_Serializer package (used for hostip service)
+      </notes>
+      <filelist>
+        <dir name="/" baseinstalldir="Net">
+          <file role="php">Geo.php</file>
+          <file role="doc">README</file>
+        </dir>
+      </filelist>
+    </release>
+
     <release>
       <version>1.0.3</version>
       <state>stable</state>
