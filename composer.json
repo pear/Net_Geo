@@ -1,0 +1,37 @@
+{
+    "authors": [
+        {
+            "email": "darren@ehlersconsulting.net",
+            "name": "Darren Ehlers",
+            "role": "Lead"
+        },
+        {
+            "email": "graeme@inetix.com.au",
+            "name": "Graeme Merrall",
+            "role": "Lead"
+        }
+    ],
+    "autoload": {
+        "psr-0": {
+            "Net": "./"
+        }
+    },
+    "description": "More info available on: http://pear.php.net/package/Net_Geo",
+    "include-path": [
+        "./"
+    ],
+    "license": "PHP License",
+    "name": "pear/net_geo",
+    "support": {
+        "issues": "http://pear.php.net/bugs/search.php?cmd=display&package_name[]=Net_Geo",
+        "source": "https://github.com/pear/Net_Geo"
+    },
+    "type": "library",
+    "require": {
+        "pear/pear_exception": "*",
+        "pear/cache": "*"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "*"
+    }
+}
